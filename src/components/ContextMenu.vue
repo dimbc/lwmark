@@ -25,7 +25,11 @@ export interface MenuItem {
     | "insertImage"
     | "insertImageUrl"
     | "exportDoc"
-    | "importDoc";
+    | "importDoc"
+    | "rename"
+    | "remove";
+  /** 危险操作（删除），悬停用红色 */
+  danger?: boolean;
   /** shortcuts.ts 里的命令 id：悬停时显示当前绑定 */
   key?: string;
   /** 固定组合键（如 Ctrl+C，由系统/编辑器原生处理，不参与改绑） */
@@ -56,7 +60,7 @@ const panel = ref<HTMLElement | null>(null);
 const pos = ref({ x: props.x, y: props.y });
 
 const tipEl = ref<HTMLElement | null>(null);
-const tip = ref<{ label: string; parts: string[] } | null>(null);
+const tip = ref<{ label: string; parts: string[]; danger?: boolean } | null>(null);
 const tipPos = ref({ x: 0, y: 0 });
 let tipTimer: number | undefined;
 
@@ -115,10 +119,10 @@ function hideTip() {
 function enter(item: MenuItem, e: MouseEvent) {
   const btn = e.currentTarget as HTMLElement;
   hideTip();
+  // 没有快捷键的项（重命名 / 删除 / 刷新…）也要出名字，不能只靠 kbd 撑着
   const parts = partsOf(item);
-  if (!parts.length) return;
   tipTimer = window.setTimeout(async () => {
-    tip.value = { label: item.label, parts };
+    tip.value = { label: item.label, parts, danger: item.danger };
     const bb = btn.getBoundingClientRect();
     await nextTick();
     const el = tipEl.value;
@@ -207,7 +211,7 @@ onBeforeUnmount(() => {
             <button
               v-for="item in row"
               :key="item.label"
-              class="ctx-item"
+              :class="['ctx-item', { danger: item.danger }]"
               @mousedown.prevent
               @click="pick(item, $event)"
               @mouseenter="enter(item, $event)"
@@ -269,6 +273,7 @@ onBeforeUnmount(() => {
         v-if="tip"
         ref="tipEl"
         class="ctx-tip"
+        :class="{ danger: tip.danger }"
         :style="{ left: tipPos.x + 'px', top: tipPos.y + 'px' }"
       >
         <span class="tip-label">{{ tip.label }}</span>
@@ -317,10 +322,14 @@ onBeforeUnmount(() => {
   }
 }
 
+/* 每行排成固定列网格：列宽一致、从左侧起算，于是所有行的图标严格上下对齐，
+ * 不会出现「2 项的行居中、4 项的行撑开」那种参差。面板宽度由最宽的一行决定。 */
 .ctx-row {
-  display: flex;
-  justify-content: center;
-  gap: 3px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 30px;
+  justify-content: start;
+  gap: 2px;
 }
 
 .ctx-sep {
@@ -347,6 +356,11 @@ onBeforeUnmount(() => {
 }
 .ctx-item:active {
   background: var(--bg-active);
+}
+/* 危险操作（删除到回收站）：悬停变红 */
+.ctx-item.danger:hover {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--danger);
 }
 
 .ctx-ico {
@@ -463,5 +477,10 @@ onBeforeUnmount(() => {
 .tip-plus {
   font-size: 10px;
   color: var(--text-3);
+}
+
+/* 删除这类危险操作，提示也带红，和图标悬停一致 */
+.ctx-tip.danger .tip-label {
+  color: var(--danger);
 }
 </style>

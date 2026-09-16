@@ -750,6 +750,57 @@ function pushTab(path: string | null, name: string, text: string) {
   countText(text);
 }
 
+/* ---------- 侧栏改名 / 删除后，同步已打开的标签 ---------- */
+
+const nameOf = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p;
+
+/** child 是不是在 parent 里（含 parent 本身），忽略大小写 */
+function underPath(child: string, parent: string) {
+  const c = child.replace(/\\/g, "/").toLowerCase();
+  const p = parent.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+  return c === p || c.startsWith(p + "/");
+}
+
+function onRenamed(oldPath: string, newPath: string) {
+  // 改的是「打开的那个文件夹」本身，工作区根跟着走，
+  // 并且要让树按新路径重读一遍 —— 否则树里所有子路径都还挂着旧前缀，点哪个都失效
+  if (folderRoot.value && folderRoot.value.toLowerCase() === oldPath.toLowerCase()) {
+    folderRoot.value = newPath;
+    kvSet(SESSION.folder, newPath);
+    void tree.value?.setRoot(newPath);
+  }
+  for (const t of tabs.value) {
+    if (!t.path) continue;
+    if (t.path === oldPath) {
+      t.path = newPath;
+      t.name = nameOf(newPath);
+    } else if (underPath(t.path, oldPath)) {
+      // 父目录被改名：路径前缀换掉
+      t.path = newPath + t.path.slice(oldPath.length);
+      t.name = nameOf(t.path);
+    }
+  }
+}
+
+function onRemoved(path: string) {
+  const keep: Tab[] = [];
+  for (const t of tabs.value) {
+    if (!t.path || !underPath(t.path, path)) {
+      keep.push(t);
+      continue;
+    }
+    // 磁盘上没了；有未保存的改动就把正文留下，退化成未命名文档，别让用户白写
+    if (t.dirty) keep.push({ ...t, path: null, name: `${t.name}（已删除）` });
+  }
+  if (!keep.length) keep.push({ path: null, name: "未命名.md", text: "", dirty: false });
+  const cur = tabs.value[active.value];
+  const at = keep.indexOf(cur);
+  tabs.value = keep;
+  active.value = at >= 0 ? at : 0;
+  docToken.value++;
+  countText(current.value.text);
+}
+
 async function openFile() {
   const result = await openMarkdown();
   if (!result) return;
@@ -946,32 +997,52 @@ const editorMenu = computed<MenuItem[]>(() => [
   { label: "插入网络图片…", icon: "imageUrl", action: "insertImageUrl", key: "insertImageUrl" },
 ]);
 
-const sidebarMenu = computed<MenuItem[]>(() => [
-  { label: "打开文件", icon: "file", action: "open", key: "open" },
-  { label: "打开文件夹", icon: "folder", action: "folder", key: "openFolder" },
-  { divider: true, label: "" },
-  { label: "新建 Markdown", icon: "filePlus", action: "newFile", key: "newFile" },
-  { label: "保存当前文档", icon: "save", action: "save", key: "save" },
-  // 导出紧跟保存：点开是格式列表，列出的格式 = 设置 → Pandoc 里勾选的那些
-  ...(pandoc.value.on
-    ? ([
-        {
-          label: "导出为…",
-          icon: "exportDoc",
-          action: "exportDoc",
-          submenu: exportChoices.value,
-          subActive: pandoc.value.format,
-        },
-      ] as MenuItem[])
-    : []),
-  { label: "刷新目录", icon: "refresh", action: "refresh" },
-  ...(pandoc.value.on
-    ? ([
-        { divider: true, label: "" },
-        { label: "导入文档（Pandoc）", icon: "importDoc", action: "importDoc" },
-      ] as MenuItem[])
-    : []),
-]);
+/** 侧栏右键点中的节点；null = 点在空白处（只出通用菜单） */
+type CtxNode = { path: string; entry: string; type: "FILE" | "DIRECTORY"; isRoot: boolean };
+const ctxNode = ref<CtxNode | null>(null);
+watch(menuVisible, (v) => {
+  if (!v) ctxNode.value = null;
+});
+
+const sidebarMenu = computed<MenuItem[]>(() => {
+  const node = ctxNode.value;
+  // 点中文件 / 文件夹才有「重命名 / 删除」，点在空白处这两项不生成
+  // 根节点（打开的那个文件夹）不给删除 —— 把工作区根删掉太容易出事，留个重命名就够
+  const targeted: MenuItem[] = node
+    ? [
+        { label: "重命名", icon: "rename", action: "rename" },
+        ...(node.isRoot
+          ? []
+          : ([
+              { label: "删除到回收站", icon: "trash", action: "remove", danger: true },
+            ] as MenuItem[])),
+      ]
+    : [];
+  // 三行：打开 / 文件操作（新建·重命名·删除·刷新）/ 输出（导入·导出·保存）
+  return [
+    { label: "打开文件", icon: "file", action: "open", key: "open" },
+    { label: "打开文件夹", icon: "folder", action: "folder", key: "openFolder" },
+    { divider: true, label: "" },
+    { label: "新建 Markdown", icon: "filePlus", action: "newFile", key: "newFile" },
+    ...targeted,
+    { label: "刷新目录", icon: "refresh", action: "refresh" },
+    ...(pandoc.value.on
+      ? ([
+          { divider: true, label: "" },
+          { label: "导入文档（Pandoc）", icon: "importDoc", action: "importDoc" },
+          // 导出点开是格式列表，列出的格式 = 设置 → Pandoc 里勾选的那些
+          {
+            label: "导出为…",
+            icon: "exportDoc",
+            action: "exportDoc",
+            submenu: exportChoices.value,
+            subActive: pandoc.value.format,
+          },
+          { label: "保存当前文档", icon: "save", action: "save", key: "save" },
+        ] as MenuItem[])
+      : [{ label: "保存当前文档", icon: "save", action: "save", key: "save" }]),
+  ];
+});
 
 const menuItems = computed(() =>
   menuSource.value === "editor" ? editorMenu.value : sidebarMenu.value,
@@ -980,15 +1051,17 @@ const menuItems = computed(() =>
 function onContextMenu(e: MouseEvent) {
   e.preventDefault();
   menuSource.value = "editor";
+  ctxNode.value = null;
   menuX.value = e.clientX;
   menuY.value = e.clientY;
   menuVisible.value = true;
 }
 
-function onTreeCtx(e: MouseEvent) {
+function onTreeCtx(payload: { e: MouseEvent; node: CtxNode | null }) {
   menuSource.value = "sidebar";
-  menuX.value = e.clientX;
-  menuY.value = e.clientY;
+  ctxNode.value = payload.node;
+  menuX.value = payload.e.clientX;
+  menuY.value = payload.e.clientY;
   menuVisible.value = true;
 }
 
@@ -1008,6 +1081,12 @@ async function onMenuSelect(item: MenuItem) {
       case "insertImageUrl": openImageUrl(); break;
       case "exportDoc": exportCurrent(item.sub); break;
       case "importDoc": importDocument(); break;
+      case "rename":
+        if (ctxNode.value) await tree.value?.startRename(ctxNode.value.path);
+        break;
+      case "remove":
+        tree.value?.askRemove(ctxNode.value?.path ?? "");
+        break;
     }
     return;
   }
@@ -1097,6 +1176,9 @@ onBeforeUnmount(() => {
         @act-save="saveFile"
         @act-export="exportCurrent"
         @ctx="onTreeCtx"
+        @renamed="onRenamed"
+        @removed="onRemoved"
+        @notify="onNotify"
         @logo="openSettings"
         @toggle-collapse="collapsed = !collapsed"
         @resize="onSidebarResize"

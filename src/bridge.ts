@@ -575,6 +575,22 @@ export async function removePath(path: string): Promise<void> {
   }
 }
 
+/**
+ * 重命名 / 移动。同目录内换个名字就是重命名 —— 无需先复制再删。
+ * ⚠️ 目标已存在时原生层会失败（不会静默覆盖），调用方要先自己判重。
+ */
+export async function movePath(from: string, to: string): Promise<void> {
+  await filesystem.move(toNativePath(from), toNativePath(to));
+}
+
+/**
+ * 删到系统回收站（不是永久删除）。
+ * v6 的 os.trashItem 走的是 PowerShell/Shell API；目录会连内容一起进去，可还原。
+ */
+export async function trashPath(path: string): Promise<void> {
+  await os.trashItem(toNativePath(path));
+}
+
 /** 通用文件选择（Pandoc 导入、选参考模板） */
 export async function pickAnyFile(
   title: string,
