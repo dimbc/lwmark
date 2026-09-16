@@ -1,0 +1,21 @@
+# 依赖
+node_modules/
+
+# 前端构建产物（vite）
+dist/
+
+# Neutralino 发布产物：各平台二进制 + resources.neu + 安装程序
+release/
+
+# Neutralino 运行时二进制（约 22MB），用 `neu update` 重新下载
+bin/
+
+# 运行时 / 构建日志
+*.log
+.tmp/
+
+# 编辑器与系统
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

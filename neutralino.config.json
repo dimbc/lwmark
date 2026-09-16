@@ -1,0 +1,49 @@
+{
+  "applicationId": "js.litemark.app",
+  "applicationName": "LiteMark",
+  "description": "轻量简约的本地 Markdown 编辑器",
+  "version": "1.0.0",
+  "defaultMode": "window",
+  "port": 0,
+  "documentRoot": "/dist/",
+  "url": "/",
+  "enableServer": true,
+  "enableNativeAPI": true,
+  "tokenSecurity": "one-time",
+  "logging": {
+    "enabled": true,
+    "writeToLogFile": true
+  },
+  "nativeAllowList": [
+    "app.*",
+    "os.*",
+    "filesystem.*",
+    "window.*",
+    "storage.*",
+    "debug.*"
+  ],
+  "modes": {
+    "window": {
+      "title": "LiteMark",
+      "width": 1120,
+      "height": 760,
+      "minWidth": 720,
+      "minHeight": 520,
+      "center": true,
+      "resizable": true,
+      "maximizable": true,
+      "borderless": true,
+      "transparent": false,
+      "exitProcessOnClose": true,
+      "icon": "/icon.png"
+    }
+  },
+  "cli": {
+    "binaryName": "litemark",
+    "resourcesPath": "/dist/",
+    "extensionsPath": "/extensions/",
+    "distributionPath": "/release/",
+    "binaryVersion": "6.9.0",
+    "clientVersion": "6.9.0"
+  }
+}
