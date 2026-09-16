@@ -1,16 +1,16 @@
-; LiteMark Windows 安装程序（Inno Setup 6）
+; LWmark Windows 安装程序（Inno Setup 6）
 ;
 ; 编译入口：npm run installer（installer/build.js 会带上版本号与产物路径）
-; 也可以手动：ISCC.exe /DSrcDir="<绝对路径>\release\litemark" litemark.iss
+; 也可以手动：ISCC.exe /DSrcDir="<绝对路径>\release\lwmark" lwmark.iss
 ;
-; 打包形态来自 `neu build --release`：release/litemark/litemark-win_x64.exe + resources.neu，
-; 安装时把 exe 改名成 LiteMark.exe（Neutralino 不在乎叫什么，只要 resources.neu 在它旁边）。
+; 打包形态来自 `neu build --release`：release/lwmark/lwmark-win_x64.exe + resources.neu，
+; 安装时把 exe 改名成 LWmark.exe（Neutralino 不在乎叫什么，只要 resources.neu 在它旁边）。
 
 #ifndef AppVersion
   #define AppVersion "1.0.0"
 #endif
 #ifndef SrcDir
-  #define SrcDir "..\release\litemark"
+  #define SrcDir "..\release\lwmark"
 #endif
 #ifndef OutDir
   #define OutDir "..\release\installer"
@@ -19,17 +19,17 @@
 [Setup]
 ; AppId 用于识别「同一次安装」，升级/卸载都靠它 —— 定下来之后不要再改
 AppId={{8F3B27C1-5A4E-4D9B-9E6A-2C7D1F0B8A34}
-AppName=LiteMark
+AppName=LWmark
 AppVersion={#AppVersion}
-AppVerName=LiteMark {#AppVersion}
-AppPublisher=LiteMark
-VersionInfoDescription=LiteMark 安装程序
-VersionInfoProductName=LiteMark
+AppVerName=LWmark {#AppVersion}
+AppPublisher=LWmark
+VersionInfoDescription=LWmark 安装程序
+VersionInfoProductName=LWmark
 VersionInfoProductVersion={#AppVersion}
 ; 默认给当前用户装（不需要管理员）；用户在向导里可以选「为所有用户安装」
 ; 选区在向导首页，选完 {autopf} 会自动切到 Program Files 或 %LOCALAPPDATA%\Programs
-DefaultDirName={autopf}\LiteMark
-DefaultGroupName=LiteMark
+DefaultDirName={autopf}\LWmark
+DefaultGroupName=LWmark
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
@@ -38,10 +38,10 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 OutputDir={#OutDir}
-OutputBaseFilename=LiteMark-Setup-{#AppVersion}
+OutputBaseFilename=LWmark-Setup-{#AppVersion}
 SetupIconFile={#SourcePath}\icon.ico
-UninstallDisplayIcon={app}\LiteMark.exe
-UninstallDisplayName=LiteMark
+UninstallDisplayIcon={app}\LWmark.exe
+UninstallDisplayName=LWmark
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -57,19 +57,19 @@ Name: "cn"; MessagesFile: "{#SourcePath}\ChineseSimplified.isl"
 Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加任务："; Flags: unchecked
 
 [Files]
-Source: "{#SrcDir}\litemark-win_x64.exe"; DestDir: "{app}"; DestName: "LiteMark.exe"; Flags: ignoreversion
+Source: "{#SrcDir}\lwmark-win_x64.exe"; DestDir: "{app}"; DestName: "LWmark.exe"; Flags: ignoreversion
 Source: "{#SrcDir}\resources.neu"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\LiteMark"; Filename: "{app}\LiteMark.exe"; IconFilename: "{app}\LiteMark.exe"; Comment: "轻量简约的本地 Markdown 编辑器"
-Name: "{group}\卸载 LiteMark"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\LiteMark"; Filename: "{app}\LiteMark.exe"; IconFilename: "{app}\LiteMark.exe"; Tasks: desktopicon
+Name: "{group}\LWmark"; Filename: "{app}\LWmark.exe"; IconFilename: "{app}\LWmark.exe"; Comment: "轻量简约的本地 Markdown 编辑器"
+Name: "{group}\卸载 LWmark"; Filename: "{uninstallexe}"
+Name: "{autodesktop}\LWmark"; Filename: "{app}\LWmark.exe"; IconFilename: "{app}\LWmark.exe"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\LiteMark.exe"; Description: "立即运行 LiteMark"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\LWmark.exe"; Description: "立即运行 LWmark"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-; 只清安装目录里的残留（Neutralino 的日志），用户配置在 %APPDATA%\LiteMark，卸载不动
+; 只清安装目录里的残留（Neutralino 的日志），用户配置在 %APPDATA%\LWmark，卸载不动
 Type: files; Name: "{app}\neutralinojs.log"
 
 [Code]
@@ -96,7 +96,7 @@ begin
     Exit;
 
   Answer := MsgBox(
-    '没有检测到 Microsoft Edge WebView2 运行时，LiteMark 的界面依赖它。' + #13#10#13#10 +
+    '没有检测到 Microsoft Edge WebView2 运行时，LWmark 的界面依赖它。' + #13#10#13#10 +
     'Win11 和较新的 Win10 都自带；如果这台机器确实没有，装完可能打不开窗口。' + #13#10#13#10 +
     '「是」继续安装' + #13#10 +
     '「否」打开官方下载页，装好运行时再运行本安装程序' + #13#10 +

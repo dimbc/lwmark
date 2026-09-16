@@ -7,7 +7,7 @@
  *
  * 所以配置的真源改成磁盘上的一个 JSON 文件：
  *
- *     %APPDATA%\LiteMark\settings.json
+ *     %APPDATA%\LWmark\settings.json
  *
  * `initStore()` 在挂载 Vue 之前把整份配置读进内存，之后 kvGet / kvSet 都是**同步**的
  * （老代码的写法不用改），写入按 120ms 防抖合并落盘。
@@ -15,11 +15,13 @@
  * 浏览器预览（没有 Neutralino）自动降级为 localStorage，行为与以前一致。
  */
 import { os } from "@neutralinojs/lib";
-import { ensureDir, fileExists, inNL, joinPath, readFileText, writeFileText } from "./bridge";
+import { copyFile, ensureDir, fileExists, inNL, joinPath, readFileText, writeFileText } from "./bridge";
 
 type Dict = Record<string, string>;
 
-const DIR_NAME = "LiteMark";
+const DIR_NAME = "LWmark";
+/** 改名前的配置目录（%APPDATA%\LiteMark），首次启动把旧配置一次性搬过来 */
+const LEGACY_DIR_NAME = "LiteMark";
 const FILE_NAME = "settings.json";
 /** 只接管自家键，别把别的库写进 localStorage 的东西也搬走 */
 const OWN_KEY = /^lm-/;
@@ -63,6 +65,24 @@ function legacySnapshot(): Dict {
 }
 
 /**
+ * 改名（LiteMark → LWmark）的一次性迁移：新配置目录里还没有 settings.json 时，
+ * 把旧目录 %APPDATA%\LiteMark\settings.json 复制过来。只复制不删除，旧目录留给用户处置。
+ */
+async function migrateLegacyConfig(appData: string, dir: string): Promise<boolean> {
+  try {
+    const legacyPath = joinPath(joinPath(appData, LEGACY_DIR_NAME), FILE_NAME);
+    if (!(await fileExists(legacyPath))) return false;
+    await ensureDir(dir);
+    await copyFile(legacyPath, joinPath(dir, FILE_NAME));
+    console.info("[LWmark] 已把 %APPDATA%\\LiteMark 的配置迁移到 %APPDATA%\\LWmark");
+    return true;
+  } catch (e) {
+    console.warn("[LWmark] 旧配置迁移失败，按全新配置启动：", e);
+    return false;
+  }
+}
+
+/**
  * 启动时调用一次（在 createApp().mount() 之前）。
  * 读不到 Neutralino 环境或配置目录不可用时静默降级到 localStorage，不影响启动。
  *
@@ -80,7 +100,8 @@ export async function initStore(): Promise<void> {
       const dir = joinPath(appData, DIR_NAME);
       const path = joinPath(dir, FILE_NAME);
       let saved: Dict = {};
-      const hasFile = await fileExists(path);
+      // 新目录还没有配置时，先把改名前的旧目录（%APPDATA%\LiteMark）搬过来再读
+      const hasFile = (await fileExists(path)) || (await migrateLegacyConfig(appData, dir));
       if (hasFile) {
         try {
           const raw = await readFileText(path);
@@ -90,7 +111,7 @@ export async function initStore(): Promise<void> {
           if (parsed && typeof parsed === "object") saved = parsed as Dict;
         } catch (e) {
           // 文件损坏时别把用户后面的设置一起挡掉，从空配置继续
-          console.warn("[LiteMark] 配置文件解析失败，按空配置启动：", e);
+          console.warn("[LWmark] 配置文件解析失败，按空配置启动：", e);
         }
       }
       await ensureDir(dir);
@@ -101,7 +122,7 @@ export async function initStore(): Promise<void> {
       return;
     }
   } catch (e) {
-    console.warn("[LiteMark] 配置目录不可用，回落到 localStorage：", e);
+    console.warn("[LWmark] 配置目录不可用，回落到 localStorage：", e);
   }
 
   data = legacyForMigration();
@@ -180,7 +201,7 @@ export function kvSetJSON(key: string, value: unknown): void {
   try {
     kvSet(key, JSON.stringify(value));
   } catch (e) {
-    console.warn("[LiteMark] 配置序列化失败：", e);
+    console.warn("[LWmark] 配置序列化失败：", e);
   }
 }
 
@@ -217,7 +238,7 @@ async function flush(): Promise<void> {
     dirty = false;
     await writeFileText(filePath, JSON.stringify(data, null, 2));
   } catch (e) {
-    console.warn("[LiteMark] 配置写入失败：", e);
+    console.warn("[LWmark] 配置写入失败：", e);
   } finally {
     flushing = false;
     if (dirty) schedule();

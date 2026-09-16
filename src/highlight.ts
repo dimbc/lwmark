@@ -232,11 +232,11 @@ export function highlight(code: string, lang: string): Tok[] {
       // 返回值理论上等于 code.length；不等说明摊平逻辑有问题，宁可不上色
       const end = flatten(refractor.tokenize(code, grammar) as any[], 0, toks);
       if (end === code.length) out = toks;
-      else console.warn("[LiteMark] 高亮区间偏移不一致，已跳过：", lang, end, code.length);
+      else console.warn("[LWmark] 高亮区间偏移不一致，已跳过：", lang, end, code.length);
     }
   } catch (e) {
     // 语法文件对畸形代码抛错时不能让整个编辑器崩
-    console.warn("[LiteMark] 高亮失败：", lang, e);
+    console.warn("[LWmark] 高亮失败：", lang, e);
   }
 
   if (cache.size >= CACHE_MAX) cache.clear();

@@ -39,6 +39,17 @@ import {
 } from "../bridge";
 import { transformSource } from "../sourceFormat";
 import { srcMarks } from "../srcMarks";
+import { TextSelection } from "@milkdown/kit/prose/state";
+import { editorViewCtx } from "@milkdown/kit/core";
+import {
+  headingFold,
+  setFoldIO,
+  setFoldReporter,
+  toggleFold,
+  headingPosByKey,
+  type OutlineSnapshot,
+} from "../headingFold";
+import { kvGetJSON, kvSetJSON } from "../store";
 import { codeHighlight } from "../codeHighlight";
 import { loadPicgo } from "../picgo";
 import TableHandles from "./TableHandles.vue";
@@ -46,12 +57,41 @@ import ImageBar from "./ImageBar.vue";
 import CodeLang from "./CodeLang.vue";
 
 /** source = true 时改用纯文本 textarea，命令直接改文本 */
-const props = defineProps<{ initial: string; source?: boolean }>();
+const props = defineProps<{
+  initial: string;
+  source?: boolean;
+  /** 当前文档的身份（文件绝对路径）；标题折叠按它记住。空串 = 不记忆 */
+  docKey?: string;
+}>();
 const emit = defineEmits<{
   update: [md: string];
   /** 图床相关的提示（上传失败等），交给 App 弹轻提示 */
   notify: [payload: { msg: string; bad?: boolean }];
+  /** 大纲快照：文档标题 / 折叠态 / 光标位置，推给侧栏的大纲面板 */
+  outline: [snap: OutlineSnapshot];
 }>();
+
+/** 大纲推流：插件在文档 / 选区 / 折叠变化时推快照给侧栏的大纲面板 */
+setFoldReporter((snap) => emit("outline", snap));
+
+/**
+ * 标题折叠的「按文件记住」：key 用文件路径。没路径（未命名草稿）就不记 ——
+ * 多个草稿共用一个 key 会互相串。
+ *
+ * 必须赶在 useEditor 之前设好：插件的工厂函数在 create() 时才跑，那时读的就是这里。
+ */
+const foldStore = props.docKey ? `lm-fold:${props.docKey}` : "";
+setFoldIO(
+  foldStore
+    ? {
+        load: () => {
+          const v = kvGetJSON<unknown>(foldStore, []);
+          return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+        },
+        save: (keys) => kvSetJSON(foldStore, keys),
+      }
+    : null,
+);
 
 /**
  * ⚠️ @milkdown/vue 的 useEditor 只返回 `{ loading, get }`（见其 lib/index.js），
@@ -69,6 +109,9 @@ const { get } = useEditor((root) =>
     .use(gfm)
     .use(history)
     .use(listener)
+    // 折叠箭头要和 srcMarks 的「## 」前缀插在同一个位置（内容起点），
+    // 先注册的排在前面 —— 箭头靠绝对定位往左溢出，视觉上永远在 # 号外侧
+    .use(headingFold)
     .use(srcMarks)
     // 代码块语法高亮（纯 Decoration，不改文档）
     .use(codeHighlight)
@@ -202,7 +245,7 @@ async function exec(cmd: EditorCommand): Promise<boolean> {
     editor.action(build() as never);
     return true;
   } catch (e) {
-    console.error("[LiteMark] 命令执行失败：", cmd, e);
+    console.error("[LWmark] 命令执行失败：", cmd, e);
     return false;
   }
 }
@@ -319,7 +362,7 @@ async function insertImage(src: string, alt = "图片", title = ""): Promise<voi
     // DOM 变化后补一次，避免 observer 批量回调时序问题
     window.setTimeout(syncImages, 30);
   } catch (e) {
-    console.error("[LiteMark] 插入图片失败：", e);
+    console.error("[LWmark] 插入图片失败：", e);
   }
 }
 
@@ -365,7 +408,56 @@ async function onPaste(e: ClipboardEvent) {
   await insertImage(`data:${file.type};base64,${b64}`, "粘贴的图片");
 }
 
-defineExpose({ exec, insertImage });
+/* ---------- 大纲面板的动作（App 经 pane ref 调用） ---------- */
+
+/** 在大纲里点了折叠箭头：按 key 找到标题后收起 / 展开 */
+async function toggleFoldAt(key: string): Promise<void> {
+  try {
+    const editor = await ready();
+    editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const pos = headingPosByKey(view.state, key);
+      if (pos >= 0) toggleFold(view, pos);
+    });
+  } catch (e) {
+    console.error("[LWmark] 切换标题折叠失败：", e);
+  }
+}
+
+/** 在大纲里点了标题：光标落到标题行首并滚动过去 */
+async function jumpToHeading(key: string): Promise<void> {
+  try {
+    const editor = await ready();
+    editor.action((ctx) => {
+      const view = ctx.get(editorViewCtx);
+      const pos = headingPosByKey(view.state, key);
+      if (pos < 0) return;
+      view.dispatch(
+        view.state.tr
+          .setSelection(TextSelection.near(view.state.doc.resolve(pos + 1), 1))
+          .scrollIntoView(),
+      );
+      view.focus();
+    });
+  } catch (e) {
+    console.error("[LWmark] 大纲跳转失败：", e);
+  }
+}
+
+/** 源码模式的大纲跳转：光标落到目标行首，粗略滚到可视区 */
+function jumpToLine(line: number): void {
+  const el = srcEl.value;
+  if (!el) return;
+  const lines = srcText.value.split(/\r\n|\r|\n/);
+  let pos = 0;
+  for (let i = 0; i < Math.min(line, lines.length); i++) pos += lines[i].length + 1;
+  el.focus();
+  el.setSelectionRange(pos, pos);
+  const lh = parseFloat(getComputedStyle(el).lineHeight) || 24;
+  el.scrollTop = Math.max(0, line * lh - el.clientHeight / 3);
+}
+
+defineExpose({ exec, insertImage, toggleFoldAt, jumpToHeading, jumpToLine });
 </script>
 
 <template>

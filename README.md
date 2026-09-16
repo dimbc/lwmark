@@ -1,4 +1,4 @@
-# LiteMark
+# LWmark
 
 > 一个轻量、简约的**本地** Markdown 编辑器 —— 打开就能写，写完能排版。
 
@@ -48,11 +48,11 @@
 
 ## 下载安装
 
-到 [Releases](../../releases) 下载 `LiteMark-Setup-x.y.z.exe`。
+到 [Releases](../../releases) 下载 `LWmark-Setup-x.y.z.exe`。
 
 - 系统要求：Windows 10/11 x64（依赖 Edge WebView2 运行时，新系统自带）
 - 安装程序默认给当前用户装（不需要管理员）；向导首页可以切「为所有用户安装」
-- 卸载不会删配置（`%APPDATA%\LiteMark\settings.json`）
+- 卸载不会删配置（`%APPDATA%\LWmark\settings.json`）
 
 ## 从源码构建
 
@@ -69,8 +69,8 @@ npm run app         # 构建 + 启动桌面窗口
 ## 打包 Windows 安装程序
 
 ```bash
-npm run release     # vite build + neu build --release → release/litemark/
-npm run installer   # 生成图标 + 调 ISCC 编译 → release/installer/LiteMark-Setup-x.y.z.exe
+npm run release     # vite build + neu build --release → release/lwmark/
+npm run installer   # 生成图标 + 调 ISCC 编译 → release/installer/LWmark-Setup-x.y.z.exe
 ```
 
 打包需要 [Inno Setup 6](https://jrsoftware.org/isdl.php)：
@@ -98,7 +98,7 @@ src/
   components/        TitleBar / FileTree / TabsBar / EditorPane / StatusBar / ImageBar
                      TableHandles / CodeLang / ContextMenu
   bridge.ts          Neutralino 原生能力封装（文件、对话框、窗口）
-  store.ts           配置落盘（%APPDATA%\LiteMark\settings.json）
+  store.ts           配置落盘（%APPDATA%\LWmark\settings.json）
   startup.ts         启动恢复
   shortcuts.ts       可改绑快捷键系统
   highlight.ts       代码高亮语言表与着色

@@ -110,7 +110,7 @@ async function loadSrc(img: HTMLImageElement) {
     });
     if (target === img && box.value && !editing) value.value = src;
   } catch (e) {
-    console.error("[LiteMark] 读取图片地址失败：", e);
+    console.error("[LWmark] 读取图片地址失败：", e);
   }
 }
 
@@ -255,7 +255,7 @@ async function commit() {
       const node = view.state.doc.nodeAt(pos);
       if (!node || node.type.name !== "image") {
         // 宁可什么都不做也不乱改，但绝不静默
-        console.warn("[LiteMark] 链接条定位不到图片节点，pos =", pos);
+        console.warn("[LWmark] 链接条定位不到图片节点，pos =", pos);
         return false;
       }
       if (String(node.attrs.src ?? "") === next) return false; // 没改，别进撤销栈
@@ -269,7 +269,7 @@ async function commit() {
     });
     if (applied) props.changed?.(img);
   } catch (e) {
-    console.error("[LiteMark] 修改图片地址失败：", e);
+    console.error("[LWmark] 修改图片地址失败：", e);
   }
   clear();
 }

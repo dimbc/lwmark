@@ -1,5 +1,5 @@
 /**
- * 启动恢复项：重开 LiteMark 时把上次的现场带回来。
+ * 启动恢复项：重开 LWmark 时把上次的现场带回来。
  *
  * 每一项都能单独关掉（设置 → 启动），默认全开。这里只负责「选项 + 键名」，
  * 真正的读写与恢复动作在 App.vue 里（它才拿得到 tabs / 目录树实例）。
@@ -55,6 +55,8 @@ export const SESSION = {
   collapsed: "lm-sidebar-collapsed",
   source: "lm-source-mode",
   settingsTab: "lm-settings-tab",
+  /** 侧栏页签：files / outline */
+  sideTab: "lm-side-tab",
 } as const;
 
 /** 标签页现场：只记路径，正文每次现读（免得磁盘上的改动被旧快照盖回去） */

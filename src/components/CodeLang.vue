@@ -303,7 +303,7 @@ async function apply(lang: string) {
       const view = ctx.get(editorViewCtx);
       const pos = codeBlockPos(view.state.doc, view.posAtDOM(pre, 0));
       if (pos < 0) {
-        console.warn("[LiteMark] 语言标签定位不到代码块，pos =", pos);
+        console.warn("[LWmark] 语言标签定位不到代码块，pos =", pos);
         return false;
       }
       const node = view.state.doc.nodeAt(pos)!;
@@ -314,7 +314,7 @@ async function apply(lang: string) {
     // 标签文字就地更新（高亮由 Decoration 自动跟着 state 变）
     if (ok && chip.value) chip.value.lang = lang;
   } catch (e) {
-    console.error("[LiteMark] 设置代码块语言失败：", e);
+    console.error("[LWmark] 设置代码块语言失败：", e);
   }
   hold();
 }

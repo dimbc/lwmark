@@ -4,7 +4,7 @@
  * 为什么落脚本文件而不是直接拼命令行：安装这件事有「查找 → 判断 → 调 winget → 复查 →
  * 补 PATH」五步，塞进一条命令行必然引号满天飞，而项目约定是**命令行里不出现引号、
  * 空格和用户路径**（见 pandoc.ts 模块头）。所以按老套路来：
- *   1. 把脚本写进 %TEMP%/LiteMark/lm-install-typst.ps1（固定 ASCII 名）
+ *   1. 把脚本写进 %TEMP%/LWmark/lm-install-typst.ps1（固定 ASCII 名）
  *   2. cwd 指到该目录，命令行只剩
  *        powershell -NoProfile -ExecutionPolicy Bypass -File lm-install-typst.ps1
  *   3. 脚本用 LM_xxx|... 行回话（LM_WINGET 永远排在最前，因为 winget 是装 Typst 的
@@ -69,7 +69,7 @@ const PS_FILE = "lm-install-typst.ps1";
 const INSTALL_LOG = "lm-typst-install.log";
 
 /** 落盘的 PowerShell 脚本，纯 ASCII */
-const PS_SCRIPT = `# LiteMark: install / locate Typst via winget  (ASCII only, on purpose)
+const PS_SCRIPT = `# LWmark: install / locate Typst via winget  (ASCII only, on purpose)
 param([switch]$Probe)
 
 $ErrorActionPreference = 'Continue'

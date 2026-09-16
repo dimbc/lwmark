@@ -1,4 +1,4 @@
-/* ============ LiteMark 主题变量（分层实色 / 圆润 / 简约） ============ */
+/* ============ LWmark 主题变量（分层实色 / 圆润 / 简约） ============ */
 /*
  * 面分四层，越靠前的越「亮」一档，暗色下才能看出层次：
  *   chrome（外框：标题栏 / 标签栏 / 侧栏 / 状态栏）
@@ -355,6 +355,62 @@ body {
 .milkdown h1:first-child,
 .milkdown h2:first-child {
   margin-top: 0.2em;
+}
+
+/* ============ 标题折叠 ============ */
+/* 被折叠的块：整体藏起来（Decoration.node 加的 class） */
+.lm-fold-hidden {
+  display: none !important;
+}
+
+/* 箭头是标题内容里的 0 宽 widget，绝对定位挂在标题元素上往左溢出，
+   所以标题要先有定位上下文 */
+.milkdown :is(h1, h2, h3, h4, h5, h6) {
+  position: relative;
+}
+
+.lm-fold-anchor {
+  display: inline-block;
+  width: 0;
+  height: 1em;
+  vertical-align: middle;
+}
+
+.lm-fold-btn {
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+  opacity: 0;
+  /* 图标本身是朝下的 chevron：展开态原样，折叠态转 -90° 朝右 */
+  transform: translateY(-50%);
+  transition: opacity 0.12s ease, color 0.1s ease, background 0.1s ease;
+}
+
+.lm-fold-btn.folded {
+  transform: translateY(-50%) rotate(-90deg);
+  opacity: 0.55;
+}
+
+/* 鼠标进标题行才浮出来；已折叠的常显半透明，一眼看出这节收着 */
+.milkdown :is(h1, h2, h3, h4, h5, h6):hover .lm-fold-btn {
+  opacity: 0.55;
+}
+
+.lm-fold-btn:hover {
+  opacity: 1 !important;
+  color: var(--accent);
+  background: var(--bg-hover);
 }
 
 .milkdown p {

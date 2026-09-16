@@ -1,8 +1,8 @@
 {
-  "applicationId": "js.litemark.app",
-  "applicationName": "LiteMark",
+  "applicationId": "js.lwmark.app",
+  "applicationName": "LWmark",
   "description": "轻量简约的本地 Markdown 编辑器",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "defaultMode": "window",
   "port": 0,
   "documentRoot": "/dist/",
@@ -24,7 +24,7 @@
   ],
   "modes": {
     "window": {
-      "title": "LiteMark",
+      "title": "LWmark",
       "width": 1120,
       "height": 760,
       "minWidth": 720,
@@ -39,7 +39,7 @@
     }
   },
   "cli": {
-    "binaryName": "litemark",
+    "binaryName": "lwmark",
     "resourcesPath": "/dist/",
     "extensionsPath": "/extensions/",
     "distributionPath": "/release/",

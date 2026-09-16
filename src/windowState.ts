@@ -4,7 +4,7 @@
  * 为什么不用 Neutralino 自带的 `modes.window.useSavedState`：那个开关把状态写到
  * `dataLocation` 指向的目录（默认是 exe 所在目录）。装在 Program Files 时没有写权限，
  * 它会静默失败；而且它的恢复路径是直接 SetWindowPlacement，不做屏幕边界检查。
- * 这里复用项目已有的 settings.json（%APPDATA%\LiteMark），并把跑到屏幕外的窗口拉回来。
+ * 这里复用项目已有的 settings.json（%APPDATA%\LWmark），并把跑到屏幕外的窗口拉回来。
  *
  * 采样来源有两个，缺一不可：
  *   - 尺寸：WebView 内容跟着窗口 resize，DOM 的 resize 事件够用
@@ -95,7 +95,7 @@ export async function restoreWindow(): Promise<void> {
       await winCtl.setRect(fixed);
       last = fixed;
     } catch (e) {
-      console.warn("[LiteMark] 恢复窗口尺寸失败：", e);
+      console.warn("[LWmark] 恢复窗口尺寸失败：", e);
     }
   }
 
@@ -104,7 +104,7 @@ export async function restoreWindow(): Promise<void> {
       await winCtl.maximize();
       maximized.value = true;
     } catch (e) {
-      console.warn("[LiteMark] 恢复最大化状态失败：", e);
+      console.warn("[LWmark] 恢复最大化状态失败：", e);
     }
   }
 }
@@ -198,6 +198,6 @@ export async function toggleWindowMax(): Promise<void> {
       kvSetBool(K.max, true);
     }
   } catch (e) {
-    console.warn("[LiteMark] 切换最大化失败：", e);
+    console.warn("[LWmark] 切换最大化失败：", e);
   }
 }

@@ -316,7 +316,7 @@ async function run(op: Op) {
       CMDS[m.kind][op](view.state, view.dispatch);
     });
   } catch (err) {
-    console.error("[LiteMark] 表格操作失败：", m.kind, op, err);
+    console.error("[LWmark] 表格操作失败：", m.kind, op, err);
   }
   // 表格尺寸变了，等 DOM 落定后重算手柄
   window.setTimeout(() => scan(lastX, lastY), 30);

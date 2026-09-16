@@ -268,7 +268,7 @@ export async function saveClipboardImage(
   try {
     const tmp = String((await os.getEnv("TEMP")) || (await os.getEnv("TMP")) || "");
     if (!tmp) return null;
-    const dir = joinPath(tmp, "LiteMark");
+    const dir = joinPath(tmp, "LWmark");
     try {
       await filesystem.createDirectory(dir);
     } catch {
@@ -301,7 +301,7 @@ function safeServer(server: string): string | null {
 }
 
 /**
- * 临时目录里的 LiteMark 子目录（顺带确保存在）。
+ * 临时目录里的 LWmark 子目录（顺带确保存在）。
  * 图床上传的 JSON、Pandoc 转译产物、Typst 安装脚本都放这里。
  */
 export async function liteTempDir(): Promise<string | null> {
@@ -309,7 +309,7 @@ export async function liteTempDir(): Promise<string | null> {
   try {
     const tmp = String((await os.getEnv("TEMP")) || (await os.getEnv("TMP")) || "");
     if (!tmp) return null;
-    const dir = joinPath(tmp, "LiteMark");
+    const dir = joinPath(tmp, "LWmark");
     try {
       await filesystem.createDirectory(dir);
     } catch {
@@ -511,20 +511,20 @@ export async function pandocRun(
   })) as ProcResult;
 }
 
-/** 建一个本次任务专用的工作区：%TEMP%/LiteMark/pandoc/<时间戳>/ */
+/** 建一个本次任务专用的工作区：%TEMP%/LWmark/pandoc/<时间戳>/ */
 export async function pandocWorkDir(): Promise<string | null> {
   if (!inNL) return null;
   try {
     const tmp = String((await os.getEnv("TEMP")) || (await os.getEnv("TMP")) || "");
     if (!tmp) return null;
-    for (const dir of [joinPath(tmp, "LiteMark"), joinPath(joinPath(tmp, "LiteMark"), "pandoc")]) {
+    for (const dir of [joinPath(tmp, "LWmark"), joinPath(joinPath(tmp, "LWmark"), "pandoc")]) {
       try {
         await filesystem.createDirectory(dir);
       } catch {
         /* 已存在 */
       }
     }
-    const ws = joinPath(joinPath(joinPath(tmp, "LiteMark"), "pandoc"), String(Date.now()));
+    const ws = joinPath(joinPath(joinPath(tmp, "LWmark"), "pandoc"), String(Date.now()));
     await filesystem.createDirectory(ws);
     return ws;
   } catch (e) {

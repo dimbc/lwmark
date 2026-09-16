@@ -2,7 +2,7 @@
  * Pandoc 导出 / 导入的执行编排。
  *
  * 流程一律「先落进临时工作区，再用相对文件名调 pandoc，最后把结果搬回用户目录」：
- *   1. %TEMP%/LiteMark/pandoc/<时间戳>/ 建目录（每次独立，多任务不互相踩）
+ *   1. %TEMP%/LWmark/pandoc/<时间戳>/ 建目录（每次独立，多任务不互相踩）
  *   2. 内容写成 in.md / 模板复制成 ref.docx（纯 ASCII 文件名）
  *   3. cwd 设成工作区，命令行里只有 `in.md`、`out.docx`、`ref.docx`
  *   4. 结果文件 copy 到目标路径（这一步才出现用户的中文/空格路径，走文件 API 不经 shell）

@@ -5,9 +5,9 @@ import { maximized, toggleWindowMax } from "../windowState";
 
 <template>
   <header class="title-bar" @dblclick.self="toggleWindowMax">
-    <button class="logo-btn" title="LiteMark · 设置" @click="$emit('logo')">
+    <button class="logo-btn" title="LWmark · 设置" @click="$emit('logo')">
       <span class="logo-dot" />
-      <span class="logo-text">LiteMark</span>
+      <span class="logo-text">LWmark</span>
     </button>
 
     <div class="title-drag" @mousedown="winCtl.drag()" @dblclick="toggleWindowMax" />

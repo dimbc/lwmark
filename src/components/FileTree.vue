@@ -29,6 +29,8 @@ const props = defineProps<{
   exportFormats?: { id: string; label: string }[];
   /** 当前默认格式，列表里打勾 */
   exportActive?: string;
+  /** 侧栏页签：文件树 / 大纲；不传 = 永远显示文件树 */
+  tab?: "files" | "outline";
 }>();
 const emit = defineEmits<{
   openFile: [path: string];
@@ -40,6 +42,8 @@ const emit = defineEmits<{
   toggleCollapse: [];
   resize: [width: number];
   logo: [];
+  /** 切换「文件 / 大纲」页签 */
+  tab: [t: "files" | "outline"];
   /** 重命名成功：旧路径 → 新路径（App 用来同步标签页） */
   renamed: [oldPath: string, newPath: string];
   /** 已删到回收站 */
@@ -399,7 +403,7 @@ defineExpose({ setRoot, refresh, startRename, askRemove });
     :class="{ dragging }"
     @contextmenu.prevent="emit('ctx', { e: $event, node: null })"
   >
-    <button class="rail-logo" title="LiteMark · 设置" @click="emit('logo')">
+    <button class="rail-logo" title="LWmark · 设置" @click="emit('logo')">
       <span class="logo-dot" />
     </button>
     <button class="ta-btn" title="打开文件 (Ctrl+O)" @click="emit('actOpen')">
@@ -435,6 +439,18 @@ defineExpose({ setRoot, refresh, startRename, askRemove });
     :style="{ width: (width ?? 220) + 'px' }"
     @contextmenu.prevent="emit('ctx', { e: $event, node: null })"
   >
+    <!-- 文件 / 大纲 页签（收起态窄条不显示） -->
+    <div class="side-tabs">
+      <button class="side-tab" :class="{ on: tab !== 'outline' }" @click="emit('tab', 'files')">文件</button>
+      <button class="side-tab" :class="{ on: tab === 'outline' }" @click="emit('tab', 'outline')">大纲</button>
+    </div>
+
+    <template v-if="tab === 'outline'">
+      <!-- 大纲面板由 App 通过插槽塞进来 -->
+      <slot name="outline" />
+    </template>
+
+    <template v-else>
     <div class="tree-actions">
       <button class="ta-btn" title="打开文件 (Ctrl+O)" @click="emit('actOpen')">
         <svg viewBox="0 0 16 16" width="15" height="15"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h3l1.5 2h4.5A1.5 1.5 0 0 1 14 5.5v7A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-9z" stroke="currentColor" stroke-width="1.2" fill="none" /></svg>
@@ -495,6 +511,7 @@ defineExpose({ setRoot, refresh, startRename, askRemove });
         <span v-else class="tree-label">{{ row.node.entry }}</span>
       </div>
     </div>
+    </template>
 
     <div class="splitter" :class="{ active: dragging }" @mousedown="onHandleDown">
       <span class="splitter-bar" />
@@ -611,6 +628,39 @@ defineExpose({ setRoot, refresh, startRename, askRemove });
 
 .dragging {
   user-select: none;
+}
+
+/* 文件 / 大纲 页签 */
+.side-tabs {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  padding: 8px 10px 0;
+}
+
+.side-tab {
+  flex: 1;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-3);
+  font-family: inherit;
+  font-size: 11.5px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.side-tab:hover {
+  color: var(--text-1);
+  background: var(--bg-hover);
+}
+
+.side-tab.on {
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
 }
 
 .tree-actions {

@@ -6,6 +6,7 @@ import StatusBar from "./components/StatusBar.vue";
 import ContextMenu, { type MenuItem } from "./components/ContextMenu.vue";
 import EditorPane from "./components/EditorPane.vue";
 import FileTree from "./components/FileTree.vue";
+import Outline from "./components/Outline.vue";
 import TabsBar, { type Tab } from "./components/TabsBar.vue";
 import ResizeHandles from "./components/ResizeHandles.vue";
 import {
@@ -58,14 +59,15 @@ import {
 } from "./startup";
 import { maximized, trackWindow, stopWindowTracking } from "./windowState";
 import { kvDel, kvGet, kvGetBool, kvSet, kvSetBool } from "./store";
+import { parseTextOutline, type OutlineItem, type OutlineSnapshot } from "./headingFold";
 import { exportDoc, importDoc } from "./pandocRun";
 import { WINGET_CMDS, TYPST_SHOW_CMD, runTypst, type TypstResult } from "./typstInstall";
 
-const WELCOME = `# 欢迎使用 LiteMark
+const WELCOME = `# 欢迎使用 LWmark
 
 > 一个轻量、简约的**本地** Markdown 编辑器 —— 打开就能写，写完能排版。
 
-左边是文件树，中间是编辑区，底下是状态栏。所有文档都留在你自己的磁盘上：LiteMark 不联网、不建账号、不上传内容。
+左边是文件树，中间是编辑区，底下是状态栏。所有文档都留在你自己的磁盘上：LWmark 不联网、不建账号、不上传内容。
 
 ## 快速上手
 
@@ -145,11 +147,11 @@ Pandoc 打开后，侧栏顶部的导出按钮和右键菜单里就会出现入�
 | 图床 | PicGo 地址与自动上传时机 |
 | Pandoc | 路径、导出格式、导出位置、PDF 引擎、参考模板、额外参数 |
 
-顶栏左侧的 **LiteMark** 点一下就是设置（\`Ctrl + ,\`），侧栏折叠是 \`Ctrl + \\\`。
+顶栏左侧的 **LWmark** 点一下就是设置（\`Ctrl + ,\`），侧栏折叠是 \`Ctrl + \\\`。
 
 ## 数据在哪
 
-界面设置存在 \`%APPDATA%\\LiteMark\\settings.json\`，重启、换端口都不会丢；文档本身永远只在你的磁盘上。
+界面设置存在 \`%APPDATA%\\LWmark\\settings.json\`，重启、换端口都不会丢；文档本身永远只在你的磁盘上。
 
 ---
 
@@ -178,6 +180,16 @@ const tree = ref<InstanceType<typeof FileTree> | null>(null);
 const folderRoot = ref<string | null>(null);
 const collapsed = ref(startup.value.ui && kvGetBool(SESSION.collapsed, false));
 const sidebarWidth = ref(Number(kvGet("lm-sidebar-w")) || 220);
+
+/* ---------- 侧栏页签：文件 / 大纲 ---------- */
+const sideTab = ref<"files" | "outline">(
+  startup.value.ui && kvGet(SESSION.sideTab) === "outline" ? "outline" : "files",
+);
+
+function onSideTab(t: "files" | "outline") {
+  sideTab.value = t;
+  if (startup.value.ui) kvSet(SESSION.sideTab, t);
+}
 
 function onSidebarResize(w: number) {
   sidebarWidth.value = w;
@@ -334,10 +346,10 @@ function applyTypst(r: TypstResult, install: boolean) {
     if (!pandoc.value.pdfEngine || pandoc.value.pdfEngine === "typst") {
       const native = r.exe.replace(/\//g, "\\");
       // 路径带空格时命令行得加引号，而本项目的约定是「参数表里不放引号」，
-      // 这种情况退回引擎名 typst，靠刚补好的 PATH（重启 LiteMark 后生效）
+      // 这种情况退回引擎名 typst，靠刚补好的 PATH（重启 LWmark 后生效）
       const spaced = /\s/.test(native);
       setPandoc({ pdfEngine: spaced ? "typst" : native });
-      bits.push(spaced ? "PDF 引擎已设为 typst（重启 LiteMark 后生效）" : "PDF 引擎已指向它");
+      bits.push(spaced ? "PDF 引擎已设为 typst（重启 LWmark 后生效）" : "PDF 引擎已指向它");
     }
     if (r.pathNote) bits.push(r.pathNote);
   }
@@ -693,6 +705,26 @@ function toggleMode() {
 }
 
 const current = computed(() => tabs.value[active.value]);
+
+/* ---------- 大纲面板数据（编辑器推快照；源码模式现算文本大纲） ---------- */
+const outlineSnap = ref<OutlineSnapshot>({ items: [], activeKey: null });
+
+const outlineItems = computed<OutlineItem[]>(() =>
+  sourceMode.value ? parseTextOutline(current.value.text) : outlineSnap.value.items,
+);
+const outlineActive = computed(() => (sourceMode.value ? null : outlineSnap.value.activeKey));
+
+function onOutlineJump(item: OutlineItem) {
+  if (sourceMode.value) {
+    pane.value?.jumpToLine(item.line ?? 0);
+  } else {
+    void pane.value?.jumpToHeading(item.key);
+  }
+}
+
+function onOutlineToggle(item: OutlineItem) {
+  void pane.value?.toggleFoldAt(item.key);
+}
 
 onMounted(() => {
   countText(current.value.text);
@@ -1139,12 +1171,12 @@ onMounted(() => {
     try {
       await restoreFolder();
     } catch (e) {
-      console.warn("[LiteMark] 恢复上次的文件夹失败：", e);
+      console.warn("[LWmark] 恢复上次的文件夹失败：", e);
     }
     try {
       await restoreTabs();
     } catch (e) {
-      console.warn("[LiteMark] 恢复上次的标签页失败：", e);
+      console.warn("[LWmark] 恢复上次的标签页失败：", e);
     }
   })();
 });
@@ -1170,6 +1202,8 @@ onBeforeUnmount(() => {
         :export-on="pandoc.on"
         :export-formats="exportChoices"
         :export-active="pandoc.format"
+        :tab="sideTab"
+        @tab="onSideTab"
         @open-file="openFileFromTree"
         @act-open="openFile"
         @act-folder="chooseFolder"
@@ -1182,7 +1216,16 @@ onBeforeUnmount(() => {
         @logo="openSettings"
         @toggle-collapse="collapsed = !collapsed"
         @resize="onSidebarResize"
-      />
+      >
+        <template #outline>
+          <Outline
+            :items="outlineItems"
+            :active-key="outlineActive"
+            @jump="onOutlineJump"
+            @toggle="onOutlineToggle"
+          />
+        </template>
+      </FileTree>
 
       <div class="main-col">
         <TabsBar :tabs="tabs" :active="active" @select="selectTab" @close="closeTab" />
@@ -1193,8 +1236,10 @@ onBeforeUnmount(() => {
               ref="pane"
               :initial="current.text"
               :source="sourceMode"
+              :doc-key="current.path ?? ''"
               @update="onUpdate"
               @notify="onNotify"
+              @outline="outlineSnap = $event"
             />
           </MilkdownProvider>
         </div>
@@ -1292,7 +1337,7 @@ onBeforeUnmount(() => {
 
                 <p class="set-note">
                   关掉哪一项，那一项就不再被记录。所有配置存在
-                  <code>%APPDATA%\LiteMark\settings.json</code>，重开程序、换端口都不会再丢。
+                  <code>%APPDATA%\LWmark\settings.json</code>，重开程序、换端口都不会再丢。
                 </p>
               </template>
 
@@ -1750,7 +1795,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="set-foot">LiteMark · 设置保存在本机</div>
+          <div class="set-foot">LWmark · 设置保存在本机</div>
         </div>
       </div>
     </Teleport>

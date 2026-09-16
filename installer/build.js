@@ -2,7 +2,7 @@
  * 一键编译 Windows 安装程序：npm run installer
  *
  * 前提：先跑过 `npm run release`（vite build + neu build --release），
- * 产物在 release/litemark/ 下。本脚本只负责生成图标 + 调 ISCC 编译 .iss。
+ * 产物在 release/lwmark/ 下。本脚本只负责生成图标 + 调 ISCC 编译 .iss。
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -11,9 +11,9 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
-const srcDir = path.join(root, "release", "litemark");
+const srcDir = path.join(root, "release", "lwmark");
 const outDir = path.join(root, "release", "installer");
-const issFile = path.join(__dirname, "litemark.iss");
+const issFile = path.join(__dirname, "lwmark.iss");
 
 /** 从 neutralino.config.json 取版本号，免得版本写两处 */
 function appVersion() {
@@ -38,7 +38,7 @@ function findIscc() {
 }
 
 function main() {
-  for (const f of ["litemark-win_x64.exe", "resources.neu"]) {
+  for (const f of ["lwmark-win_x64.exe", "resources.neu"]) {
     if (!fs.existsSync(path.join(srcDir, f))) {
       console.error(`缺少发布产物 ${f}，请先运行：npm run release`);
       process.exit(1);
@@ -76,7 +76,7 @@ function main() {
   const r = spawnSync(iscc, args, { stdio: "inherit" });
   if (r.status !== 0) process.exit(r.status ?? 1);
 
-  const setup = path.join(outDir, `LiteMark-Setup-${version}.exe`);
+  const setup = path.join(outDir, `LWmark-Setup-${version}.exe`);
   if (!fs.existsSync(setup)) {
     console.error("编译结束但没找到输出文件，检查 .iss 的 OutputDir");
     process.exit(1);
