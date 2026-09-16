@@ -1,23 +1,16 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import { inNL, winCtl } from "../bridge";
-
-const maximized = ref(false);
-
-async function toggleMax() {
-  await winCtl.toggleMax(maximized.value);
-  maximized.value = !maximized.value;
-}
+import { maximized, toggleWindowMax } from "../windowState";
 </script>
 
 <template>
-  <header class="title-bar" @dblclick.self="toggleMax">
+  <header class="title-bar" @dblclick.self="toggleWindowMax">
     <button class="logo-btn" title="LiteMark · 设置" @click="$emit('logo')">
       <span class="logo-dot" />
       <span class="logo-text">LiteMark</span>
     </button>
 
-    <div class="title-drag" @mousedown="winCtl.drag()" @dblclick="toggleMax" />
+    <div class="title-drag" @mousedown="winCtl.drag()" @dblclick="toggleWindowMax" />
 
     <div class="title-right">
       <span v-if="!inNL" class="env-badge">浏览器预览</span>
@@ -25,7 +18,7 @@ async function toggleMax() {
         <button class="tb-btn icon-btn" title="最小化" @click="winCtl.minimize()">
           <svg viewBox="0 0 12 12" width="12" height="12"><path d="M1 6h10" stroke="currentColor" stroke-width="1.1" fill="none" /></svg>
         </button>
-        <button class="tb-btn icon-btn" :title="maximized ? '还原' : '最大化'" @click="toggleMax">
+        <button class="tb-btn icon-btn" :title="maximized ? '还原' : '最大化'" @click="toggleWindowMax">
           <svg v-if="!maximized" viewBox="0 0 12 12" width="12" height="12"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.1" fill="none" /></svg>
           <svg v-else viewBox="0 0 12 12" width="12" height="12"><rect x="1" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.1" fill="none" /><path d="M3.5 3V2a1 1 0 0 1 1-1H10a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1h-1" stroke="currentColor" stroke-width="1.1" fill="none" /></svg>
         </button>
@@ -45,9 +38,8 @@ async function toggleMax() {
   align-items: center;
   padding: 0 8px;
   border-bottom: 1px solid var(--border-faint);
-  background: var(--bg-glass-strong);
-  backdrop-filter: var(--blur-panel);
-  -webkit-backdrop-filter: var(--blur-panel);
+  /* 外框层，与标签栏 / 侧栏 / 状态栏同色 */
+  background: var(--bg-chrome);
 }
 
 .logo-btn {

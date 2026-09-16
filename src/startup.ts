@@ -15,6 +15,8 @@ export interface StartupConf {
   ui: boolean;
   /** 记住设置面板停留的 Tab */
   settingsTab: boolean;
+  /** 记住窗口的大小与位置 */
+  window: boolean;
 }
 
 /** 设置面板里逐条渲染用的文案 */
@@ -39,6 +41,11 @@ export const STARTUP_ITEMS: { id: keyof StartupConf; label: string; note: string
     label: "设置面板的位置",
     note: "下次打开设置时停在上次那个 Tab",
   },
+  {
+    id: "window",
+    label: "窗口大小与位置",
+    note: "下次打开恢复到你调好的尺寸；窗口跑到屏幕外会拉回来",
+  },
 ];
 
 /** 会话现场存哪；folder/tabs 的读者是启动恢复，其余是即时状态 */
@@ -62,6 +69,7 @@ const K: Record<keyof StartupConf, string> = {
   tabs: "lm-startup-tabs",
   ui: "lm-startup-ui",
   settingsTab: "lm-startup-settings-tab",
+  window: "lm-startup-window",
 };
 
 export function loadStartup(): StartupConf {
@@ -70,6 +78,7 @@ export function loadStartup(): StartupConf {
     tabs: kvGetBool(K.tabs, true),
     ui: kvGetBool(K.ui, true),
     settingsTab: kvGetBool(K.settingsTab, true),
+    window: kvGetBool(K.window, true),
   };
 }
 
@@ -78,6 +87,7 @@ export function saveStartup(c: StartupConf): void {
   kvSetBool(K.tabs, c.tabs);
   kvSetBool(K.ui, c.ui);
   kvSetBool(K.settingsTab, c.settingsTab);
+  kvSetBool(K.window, c.window);
 }
 
 export function loadOpenTabs(): OpenTabs {

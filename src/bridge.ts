@@ -1,7 +1,7 @@
 /**
  * Neutralino 桥接层：浏览器里自动降级（input file / blob 下载）。
  */
-import { init, os, filesystem, app, window as nlWindow } from "@neutralinojs/lib";
+import { init, os, filesystem, app, computer, window as nlWindow } from "@neutralinojs/lib";
 
 export let inNL = typeof window !== "undefined" && "NL_PORT" in window;
 
@@ -106,12 +106,59 @@ export async function saveMarkdown(
   return path ?? "未命名.md";
 }
 
+/** 窗口在屏幕上的位置与大小，单位是**物理像素**（和 window.setSize / move 同一套） */
+export interface WinRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** 最小窗口尺寸，与 neutralino.config.json 的 modes.window 保持一致 */
+export const WIN_MIN = { width: 720, height: 520 };
+
 export const winCtl = {
   minimize: () => nlWindow.minimize(),
   close: () => app.exit(), // v6 无 window.close，关闭走 app.exit
-  toggleMax: (maximized: boolean) =>
-    maximized ? nlWindow.unmaximize() : nlWindow.maximize(),
   drag: () => nlWindow.beginDrag(), // v6 拖拽 API
+  maximize: () => nlWindow.maximize(),
+  unmaximize: () => nlWindow.unmaximize(),
+  isMaximized: () => nlWindow.isMaximized(),
+  /**
+   * 读当前窗口矩形。borderless 窗口在 Windows 下去掉了 WS_THICKFRAME，
+   * 系统不再提供拖拽缩放，所有尺寸变化都得自己算，所以需要一个统一的读取口。
+   */
+  async rect(): Promise<WinRect> {
+    if (!inNL) return { x: 0, y: 0, width: 0, height: 0 };
+    const [size, pos] = await Promise.all([nlWindow.getSize(), nlWindow.getPosition()]);
+    return {
+      x: pos.x ?? 0,
+      y: pos.y ?? 0,
+      width: size.width ?? 0,
+      height: size.height ?? 0,
+    };
+  },
+  /**
+   * 改大小 / 挪位置，两个都是物理像素。
+   * setSize 的参数是「补丁」语义，但 minWidth 依赖窗口创建时的值，显式再传一遍更保险。
+   */
+  async setRect(r: Partial<WinRect>): Promise<void> {
+    if (!inNL) return;
+    if (typeof r.width === "number" && typeof r.height === "number") {
+      await nlWindow.setSize({
+        width: Math.round(r.width),
+        height: Math.round(r.height),
+        minWidth: WIN_MIN.width,
+        minHeight: WIN_MIN.height,
+        resizable: true,
+      });
+    }
+    if (typeof r.x === "number" && typeof r.y === "number") {
+      await nlWindow.move(Math.round(r.x), Math.round(r.y));
+    }
+  },
+  /** 显示器信息，用来把窗口位置夹回屏幕内 */
+  displays: () => computer.getDisplays(),
 };
 
 /* ---------- 图片 ---------- */

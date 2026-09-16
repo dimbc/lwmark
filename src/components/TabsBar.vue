@@ -68,7 +68,8 @@ function close(i: number, e: MouseEvent) {
   background: var(--bg-hover);
 }
 .tab.active {
-  background: var(--bg-hover);
+  /* 画布色：和外框层拉开，视觉上和下面的编辑区连成一体 */
+  background: var(--bg-canvas);
   color: var(--text-1);
   box-shadow: inset 0 -2px 0 var(--accent);
 }

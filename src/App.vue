@@ -7,6 +7,7 @@ import ContextMenu, { type MenuItem } from "./components/ContextMenu.vue";
 import EditorPane from "./components/EditorPane.vue";
 import FileTree from "./components/FileTree.vue";
 import TabsBar, { type Tab } from "./components/TabsBar.vue";
+import ResizeHandles from "./components/ResizeHandles.vue";
 import {
   inNL,
   openMarkdown,
@@ -55,6 +56,7 @@ import {
   saveStartup,
   type StartupConf,
 } from "./startup";
+import { maximized, trackWindow, stopWindowTracking } from "./windowState";
 import { kvDel, kvGet, kvGetBool, kvSet, kvSetBool } from "./store";
 import { exportDoc, importDoc } from "./pandocRun";
 import { WINGET_CMDS, TYPST_SHOW_CMD, runTypst, type TypstResult } from "./typstInstall";
@@ -1051,6 +1053,7 @@ function onKeydown(e: KeyboardEvent) {
 onMounted(() => {
   window.addEventListener("keydown", onCaptureKey, true);
   window.addEventListener("keydown", onKeydown);
+  trackWindow();
   countText(current.value.text);
   // 恢复上次的现场：先目录后标签（标签只依赖文件路径，两者互不阻塞）
   void (async () => {
@@ -1071,11 +1074,12 @@ onBeforeUnmount(() => {
   window.removeEventListener("keydown", onKeydown);
   window.removeEventListener("keydown", onCaptureKey, true);
   window.removeEventListener("keydown", onRecordKey, true);
+  stopWindowTracking();
 });
 </script>
 
 <template>
-  <div class="window-shell" :class="{ 'browser-preview': !inNL }">
+  <div class="window-shell" :class="{ 'browser-preview': !inNL, maximized }">
     <TitleBar @logo="openSettings" />
 
     <div class="body-row">
@@ -1123,7 +1127,11 @@ onBeforeUnmount(() => {
       :source="sourceMode"
       :mode-key="formatBinding(bindingOf('toggleMode'))"
       @toggle-mode="toggleMode"
+      @settings="openSettings"
     />
+
+    <!-- 无边框窗口没有系统缩放边框，四边/四角的拖拽热区自己铺 -->
+    <ResizeHandles />
 
     <!-- 设置弹窗 -->
     <Teleport to="body">
@@ -1733,7 +1741,8 @@ onBeforeUnmount(() => {
   z-index: 1100;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.18);
+  /* 遮罩要够重，浮层才「浮」得起来 */
+  background: rgba(0, 0, 0, 0.32);
 }
 
 .set-panel {
@@ -1863,7 +1872,7 @@ onBeforeUnmount(() => {
   transition: background 0.12s ease, color 0.12s ease;
 }
 .seg-item.on {
-  background: var(--bg-glass-strong);
+  background: var(--bg-field);
   color: var(--text-1);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
@@ -1995,7 +2004,7 @@ onBeforeUnmount(() => {
   min-width: 118px;
   text-align: center;
   border: 1px solid var(--border-soft);
-  background: var(--bg-glass-strong);
+  background: var(--bg-field);
   color: var(--text-2);
   font-size: 11.5px;
   font-family: inherit;
@@ -2136,7 +2145,7 @@ onBeforeUnmount(() => {
 
 .pg-btn {
   border: 1px solid var(--border-soft);
-  background: var(--bg-glass-strong);
+  background: var(--bg-field);
   padding: 4px 10px;
   color: var(--text-2);
 }

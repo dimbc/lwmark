@@ -13,7 +13,7 @@ const props = defineProps<{
   modeKey?: string;
 }>();
 
-const emit = defineEmits<{ toggleMode: [] }>();
+const emit = defineEmits<{ toggleMode: []; settings: [] }>();
 
 const modeName = computed(() => (props.source ? "源码模式" : "所见即所得"));
 const modeTip = computed(
@@ -26,6 +26,21 @@ const modeTip = computed(
 <template>
   <footer class="status-bar">
     <div class="status-left">
+      <button class="set-btn" title="设置" @click="emit('settings')">
+        <svg
+          class="mode-ico"
+          viewBox="0 0 16 16"
+          width="13"
+          height="13"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.3"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path :d="ICON_PATHS.settings" />
+        </svg>
+      </button>
       <button class="mode-btn" :class="{ src: source }" :title="modeTip" @click="emit('toggleMode')">
         <svg
           class="mode-ico"
@@ -65,7 +80,8 @@ const modeTip = computed(
   font-size: 11.5px;
   color: var(--text-3);
   border-top: 1px solid var(--border-faint);
-  background: var(--bg-glass-strong);
+  /* 外框层，与标题栏 / 标签栏 / 侧栏同色 */
+  background: var(--bg-chrome);
 }
 
 .status-left,
@@ -75,14 +91,38 @@ const modeTip = computed(
   gap: 8px;
 }
 
-/* 左下角的模式按钮：显示当前模式名，点一下切换 */
+/* 左下角最左端：设置入口（只有齿轮，无文字） */
+.set-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 21px;
+  /* 抵消按钮自身的内边距，让图标与上方内容的 16px 边距对齐 */
+  margin-left: -5px;
+  padding: 0 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  line-height: 1;
+  border-radius: var(--radius-item);
+  cursor: default;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.set-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.set-btn:active {
+  background: var(--bg-active);
+}
+
+/* 模式按钮：显示当前模式名，点一下切换 */
 .mode-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   height: 21px;
-  /* 抵消按钮自身的内边距，让图标与上方内容的 16px 边距大致对齐 */
-  margin-left: -5px;
   padding: 0 7px;
   border: none;
   background: transparent;

@@ -2,7 +2,7 @@
   "applicationId": "js.litemark.app",
   "applicationName": "LiteMark",
   "description": "轻量简约的本地 Markdown 编辑器",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "defaultMode": "window",
   "port": 0,
   "documentRoot": "/dist/",

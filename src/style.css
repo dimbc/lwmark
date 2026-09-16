@@ -1,30 +1,51 @@
-/* ============ LiteMark 主题变量（半透明 / 圆润 / 简约） ============ */
+/* ============ LiteMark 主题变量（分层实色 / 圆润 / 简约） ============ */
+/*
+ * 面分四层，越靠前的越「亮」一档，暗色下才能看出层次：
+ *   chrome（外框：标题栏 / 标签栏 / 侧栏 / 状态栏）
+ *     < canvas（编辑画布）
+ *       < raised（浮层：菜单 / 弹窗 / 设置面板 / 提示条）
+ *         < field（控件填充：按钮 / 键帽 / 分段选中）
+ *
+ * ⚠️ 一律用**实色**。窗口本身不透明（neutralino.config.json: transparent=false），
+ * 半透明玻璃会叠在 WebView 的底色上混出脏灰 —— 这正是此前暗色发闷、各面板
+ * 糊成一片的根因。真需要玻璃感时，也要叠在自己的实色面上，别叠在窗口底上。
+ */
 :root {
   --radius-win: 12px;
   --radius-panel: 10px;
   --radius-item: 7px;
 
-  --bg-glass: rgba(250, 250, 252, 0.62);
-  --bg-glass-strong: rgba(255, 255, 255, 0.82);
-  --bg-hover: rgba(0, 0, 0, 0.055);
-  --bg-active: rgba(0, 0, 0, 0.09);
+  /* —— 面 —— */
+  --bg-chrome: #f3f5f9;
+  --bg-canvas: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-field: #e9ecf3;
+  --bg-hover: rgba(15, 23, 42, 0.05);
+  --bg-active: rgba(15, 23, 42, 0.09);
 
-  --border-soft: rgba(0, 0, 0, 0.08);
-  --border-faint: rgba(0, 0, 0, 0.05);
+  --border-soft: rgba(15, 23, 42, 0.1);
+  --border-faint: rgba(15, 23, 42, 0.055);
+  /* 窗口外圈描边：要能跟窗口外面的桌面分界。桌面通常比窗口亮，
+     所以这里用深色细线 —— 用浅色线会在亮背景上糊掉，看着就是「顶栏有白边」 */
+  --border-win: rgba(15, 23, 42, 0.2);
 
-  --text-1: #1a1a1e;
-  --text-2: rgba(26, 26, 30, 0.62);
-  --text-3: rgba(26, 26, 30, 0.38);
+  /* —— 字 —— */
+  --text-1: #16181d;
+  --text-2: rgba(22, 24, 29, 0.62);
+  --text-3: rgba(22, 24, 29, 0.4);
 
-  --accent: #4c8bf5;
-  --accent-soft: rgba(76, 139, 245, 0.12);
+  /* —— 强调 —— */
+  --accent: #3d7ff0;
+  --accent-soft: rgba(61, 127, 240, 0.11);
+  --sel-bg: rgba(61, 127, 240, 0.22);
+  --danger: #d9454f;
 
-  --danger: #e0555f;
-
-  --code-bg: rgba(0, 0, 0, 0.055);
+  /* —— 块 —— */
+  --code-bg: rgba(15, 23, 42, 0.06);
+  --quote-bg: rgba(15, 23, 42, 0.045);
   /* 代码块：浅灰底 + 深字（原来是近黑底，太重了） */
-  --pre-bg: #f4f5f7;
-  --pre-text: #2f3238;
+  --pre-bg: #f5f6f9;
+  --pre-text: #23262c;
 
   /* 语法高亮配色（亮色，参照 GitHub Light，保证在浅灰底上的对比度） */
   --hl-comment: #6a737d;
@@ -37,31 +58,43 @@
   --hl-attr: #0550ae;
   --hl-punct: #5b616e;
 
-  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-float: 0 12px 36px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.08);
   --blur-panel: blur(28px) saturate(1.4);
+
+  /* 兼容别名：历史引用（--bg-glass*）一律归到新的分层变量，别再写半透明色 */
+  --bg-glass: var(--bg-chrome);
+  --bg-glass-strong: var(--bg-raised);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-glass: rgba(34, 34, 40, 0.58);
-    --bg-glass-strong: rgba(42, 42, 48, 0.8);
+    /* —— 面：chrome < canvas < raised < field，逐层 +7~11 阶灰 —— */
+    --bg-chrome: #15161a;
+    --bg-canvas: #1c1e24;
+    --bg-raised: #26282f;
+    --bg-field: #31343d;
     --bg-hover: rgba(255, 255, 255, 0.07);
-    --bg-active: rgba(255, 255, 255, 0.11);
+    --bg-active: rgba(255, 255, 255, 0.12);
 
-    --border-soft: rgba(255, 255, 255, 0.09);
-    --border-faint: rgba(255, 255, 255, 0.055);
+    --border-soft: rgba(255, 255, 255, 0.1);
+    --border-faint: rgba(255, 255, 255, 0.06);
+    --border-win: rgba(0, 0, 0, 0.55);
 
-    --text-1: #ececf1;
-    --text-2: rgba(236, 236, 241, 0.6);
-    --text-3: rgba(236, 236, 241, 0.35);
+    /* —— 字：不用纯白，避免在深底上眩光；三级灰拉开层次 —— */
+    --text-1: #e3e5ea;
+    --text-2: rgba(227, 229, 234, 0.64);
+    --text-3: rgba(227, 229, 234, 0.42);
 
-    --accent: #6ea3ff;
-    --accent-soft: rgba(110, 163, 255, 0.16);
+    --accent: #6f9fff;
+    --accent-soft: rgba(111, 159, 255, 0.14);
+    --sel-bg: rgba(111, 159, 255, 0.3);
+    --danger: #ff6b74;
 
-    --code-bg: rgba(255, 255, 255, 0.08);
-    /* 暗色下也是「灰」底，不是近黑 */
-    --pre-bg: #23252b;
-    --pre-text: #dcdfe6;
+    --code-bg: rgba(255, 255, 255, 0.075);
+    --quote-bg: rgba(255, 255, 255, 0.05);
+    /* 代码块比画布亮一档，成一块清晰的「灰砖」，不是黑洞 */
+    --pre-bg: #282b33;
+    --pre-text: #d5d8df;
 
     --hl-comment: #8b949e;
     --hl-keyword: #ff7b72;
@@ -73,27 +106,33 @@
     --hl-attr: #79c0ff;
     --hl-punct: #b9bfca;
 
-    --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-float: 0 16px 44px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.35);
   }
 }
 
 /* ============ 手动主题覆盖（设置页） ============ */
+/* 值必须与上面两套保持一致；改配色时三处一起改 */
 :root[data-theme="dark"] {
-  --bg-glass: rgba(34, 34, 40, 0.58);
-  --bg-glass-strong: rgba(42, 42, 48, 0.8);
+  --bg-chrome: #15161a;
+  --bg-canvas: #1c1e24;
+  --bg-raised: #26282f;
+  --bg-field: #31343d;
   --bg-hover: rgba(255, 255, 255, 0.07);
-  --bg-active: rgba(255, 255, 255, 0.11);
-  --border-soft: rgba(255, 255, 255, 0.09);
-  --border-faint: rgba(255, 255, 255, 0.055);
-  --text-1: #ececf1;
-  --text-2: rgba(236, 236, 241, 0.6);
-  --text-3: rgba(236, 236, 241, 0.35);
-  --accent: #6ea3ff;
-  --accent-soft: rgba(110, 163, 255, 0.16);
-  --code-bg: rgba(255, 255, 255, 0.08);
-  /* 暗色下也是「灰」底，不是近黑 */
-  --pre-bg: #23252b;
-  --pre-text: #dcdfe6;
+  --bg-active: rgba(255, 255, 255, 0.12);
+  --border-soft: rgba(255, 255, 255, 0.1);
+  --border-faint: rgba(255, 255, 255, 0.06);
+  --border-win: rgba(0, 0, 0, 0.55);
+  --text-1: #e3e5ea;
+  --text-2: rgba(227, 229, 234, 0.64);
+  --text-3: rgba(227, 229, 234, 0.42);
+  --accent: #6f9fff;
+  --accent-soft: rgba(111, 159, 255, 0.14);
+  --sel-bg: rgba(111, 159, 255, 0.3);
+  --danger: #ff6b74;
+  --code-bg: rgba(255, 255, 255, 0.075);
+  --quote-bg: rgba(255, 255, 255, 0.05);
+  --pre-bg: #282b33;
+  --pre-text: #d5d8df;
   --hl-comment: #8b949e;
   --hl-keyword: #ff7b72;
   --hl-string: #a5d6ff;
@@ -103,25 +142,33 @@
   --hl-tag: #7ee787;
   --hl-attr: #79c0ff;
   --hl-punct: #b9bfca;
-  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-float: 0 16px 44px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 :root[data-theme="light"] {
-  --bg-glass: rgba(250, 250, 252, 0.62);
-  --bg-glass-strong: rgba(255, 255, 255, 0.82);
-  --bg-hover: rgba(0, 0, 0, 0.055);
-  --bg-active: rgba(0, 0, 0, 0.09);
-  --border-soft: rgba(0, 0, 0, 0.08);
-  --border-faint: rgba(0, 0, 0, 0.05);
-  --text-1: #1a1a1e;
-  --text-2: rgba(26, 26, 30, 0.62);
-  --text-3: rgba(26, 26, 30, 0.38);
-  --accent: #4c8bf5;
-  --accent-soft: rgba(76, 139, 245, 0.12);
-  --code-bg: rgba(0, 0, 0, 0.055);
+  --bg-chrome: #f3f5f9;
+  --bg-canvas: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-field: #e9ecf3;
+  --bg-hover: rgba(15, 23, 42, 0.05);
+  --bg-active: rgba(15, 23, 42, 0.09);
+  --border-soft: rgba(15, 23, 42, 0.1);
+  --border-faint: rgba(15, 23, 42, 0.055);
+  /* 窗口外圈描边：要能跟窗口外面的桌面分界。桌面通常比窗口亮，
+     所以这里用深色细线 —— 用浅色线会在亮背景上糊掉，看着就是「顶栏有白边」 */
+  --border-win: rgba(15, 23, 42, 0.2);
+  --text-1: #16181d;
+  --text-2: rgba(22, 24, 29, 0.62);
+  --text-3: rgba(22, 24, 29, 0.4);
+  --accent: #3d7ff0;
+  --accent-soft: rgba(61, 127, 240, 0.11);
+  --sel-bg: rgba(61, 127, 240, 0.22);
+  --danger: #d9454f;
+  --code-bg: rgba(15, 23, 42, 0.06);
+  --quote-bg: rgba(15, 23, 42, 0.045);
   /* 代码块：浅灰底 + 深字（原来是近黑底，太重了） */
-  --pre-bg: #f4f5f7;
-  --pre-text: #2f3238;
+  --pre-bg: #f5f6f9;
+  --pre-text: #23262c;
   /* 语法高亮配色（亮色，参照 GitHub Light，保证在浅灰底上的对比度） */
   --hl-comment: #6a737d;
   --hl-keyword: #cf222e;
@@ -132,7 +179,7 @@
   --hl-tag: #116329;
   --hl-attr: #0550ae;
   --hl-punct: #5b616e;
-  --shadow-float: 0 12px 40px rgba(0, 0, 0, 0.16), 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-float: 0 12px 36px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
 /* ============ 全局 ============ */
@@ -142,11 +189,19 @@
   box-sizing: border-box;
 }
 
+/*
+ * 视口底色必须是**实色**。WebView2 的默认页底色是白的，html / body 一旦透明，
+ * 下面这几处就会透出白边：
+ *   · 窗口圆角（--radius-win）外面的四个缺口 —— 暗色主题下最刺眼；
+ *   · 高分屏（本机 dpi=120）下 100% 高度取整留下的发丝缝，正好在顶栏上沿。
+ * 填成 chrome（外框色）就全部对上了：上沿与标题栏同色、下沿与状态栏同色、
+ * 左右与侧栏同色，这几个「露底」的位置都无缝。
+ */
 html,
 body,
 #app {
   height: 100%;
-  background: transparent;
+  background: var(--bg-chrome);
   overflow: hidden;
 }
 
@@ -166,11 +221,16 @@ body {
   flex-direction: column;
   margin: 0;
   border-radius: var(--radius-win);
-  background: var(--bg-glass);
-  backdrop-filter: var(--blur-panel);
-  -webkit-backdrop-filter: var(--blur-panel);
-  border: 1px solid var(--border-soft);
+  /* 编辑画布：比 chrome 亮一档，把内容区从外框里「托」出来 */
+  background: var(--bg-canvas);
+  border: 1px solid var(--border-win);
   overflow: hidden;
+}
+
+/* 最大化时窗口贴满屏幕，圆角会在屏幕边缘留下四个缺口，描边也会被切掉一半 —— 一并收掉 */
+.window-shell.maximized {
+  border-radius: 0;
+  border-color: transparent;
 }
 
 /* 浏览器预览时给个底色，不然透出白页 */
@@ -247,7 +307,7 @@ body {
 }
 
 .src-area::selection {
-  background: var(--accent-soft);
+  background: var(--sel-bg);
 }
 
 .src-area::-webkit-scrollbar {
@@ -419,7 +479,8 @@ body {
 
 .milkdown blockquote {
   border-left: 3px solid var(--accent);
-  background: var(--accent-soft);
+  /* 引用块用中性灰底 + 强调色左边框：原来的整块蓝底在深色下太抢眼 */
+  background: var(--quote-bg);
   border-radius: 0 var(--radius-item) var(--radius-item) 0;
   padding: 6px 16px;
   margin: 0.7em 0;
@@ -506,7 +567,7 @@ body {
 
 /* 选中色 */
 .milkdown ::selection {
-  background: var(--accent-soft);
+  background: var(--sel-bg);
 }
 
 /* ============ 所见即所得里就地显示的 Markdown 标记（只装饰，不属于文档） ============ */

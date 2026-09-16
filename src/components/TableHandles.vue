@@ -506,7 +506,8 @@ const COL_DOTS = [
 }
 
 .tmenu-i.danger:hover:not(:disabled) {
-  background: rgba(224, 85, 95, 0.12);
+  /* 跟着 --danger 走，两套主题都不会跑偏 */
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
   color: var(--danger);
 }
 

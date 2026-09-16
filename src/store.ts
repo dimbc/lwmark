@@ -15,7 +15,7 @@
  * 浏览器预览（没有 Neutralino）自动降级为 localStorage，行为与以前一致。
  */
 import { os } from "@neutralinojs/lib";
-import { ensureDir, fileExists, joinPath, readFileText, writeFileText } from "./bridge";
+import { ensureDir, fileExists, inNL, joinPath, readFileText, writeFileText } from "./bridge";
 
 type Dict = Record<string, string>;
 
@@ -65,10 +65,14 @@ function legacySnapshot(): Dict {
 /**
  * 启动时调用一次（在 createApp().mount() 之前）。
  * 读不到 Neutralino 环境或配置目录不可用时静默降级到 localStorage，不影响启动。
+ *
+ * ⚠️ 这个函数跑在挂载之前，所以它**绝不能碰 localStorage**（Neutralino 里）。
+ * WebView 的 localStorage 是同步 IPC：profile 一旦出问题，它不会报错而是**永久阻塞**
+ * 主线程 —— 连 setTimeout 都不再触发，界面就再也挂不上，表现就是一片白。
+ * 老版本迁移只在浏览器预览下有意义（Neutralino 端口随机，旧 origin 本来也读不到）。
  */
 export async function initStore(): Promise<void> {
   if (loaded) return;
-  const legacy = legacySnapshot();
 
   try {
     const appData = String((await os.getEnv("APPDATA")) || "");
@@ -76,7 +80,8 @@ export async function initStore(): Promise<void> {
       const dir = joinPath(appData, DIR_NAME);
       const path = joinPath(dir, FILE_NAME);
       let saved: Dict = {};
-      if (await fileExists(path)) {
+      const hasFile = await fileExists(path);
+      if (hasFile) {
         try {
           const raw = await readFileText(path);
           // 别的工具（记事本、PowerShell 的 Out-File）写的文件可能带 BOM，JSON.parse 会直接抛
@@ -90,18 +95,22 @@ export async function initStore(): Promise<void> {
       }
       await ensureDir(dir);
       filePath = path;
-      // 磁盘上的值优先；磁盘里没有的键用当前 origin 残留的值补上（从旧版本升上来时带一次）
-      data = { ...legacy, ...saved };
+      // 磁盘是真源；只有磁盘上还从没写过配置时，才要一份老 origin 的残留做一次性迁移
+      data = hasFile ? { ...saved } : { ...legacyForMigration(), ...saved };
       loaded = true;
-      if (Object.keys(legacy).length) schedule();
       return;
     }
   } catch (e) {
     console.warn("[LiteMark] 配置目录不可用，回落到 localStorage：", e);
   }
 
-  data = legacy;
+  data = legacyForMigration();
   loaded = true;
+}
+
+/** 浏览器预览下才用得着 localStorage；Neutralino 里一律不碰（同步 IPC，卡住即白屏） */
+function legacyForMigration(): Dict {
+  return inNL ? {} : legacySnapshot();
 }
 
 /** 读配置；没存过返回 null */

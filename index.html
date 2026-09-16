@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LiteMark</title>
+    <style>
+      /*
+       * 首帧底色：应用 CSS 还没加载时，窗口先按系统主题铺一层，
+       * 免得起窗瞬间白闪，也挡掉加载期从窗口边缘透出的白边。
+       * 值与应用内的 --bg-chrome 一致；应用样式表加载后会接管。
+       */
+      html {
+        background: #f3f5f9;
+      }
+      @media (prefers-color-scheme: dark) {
+        html {
+          background: #15161a;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="app"></div>
