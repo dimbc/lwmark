@@ -710,7 +710,10 @@ const current = computed(() => tabs.value[active.value]);
 const outlineSnap = ref<OutlineSnapshot>({ items: [], activeKey: null });
 
 const outlineItems = computed<OutlineItem[]>(() =>
-  sourceMode.value ? parseTextOutline(current.value.text) : outlineSnap.value.items,
+  sourceMode.value
+    ? parseTextOutline(current.value.text)
+    : // 树形收起：祖先标题折着，子条目整条藏起来（与正文折叠表现一致）
+      outlineSnap.value.items.filter((i) => !i.hidden),
 );
 const outlineActive = computed(() => (sourceMode.value ? null : outlineSnap.value.activeKey));
 

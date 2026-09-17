@@ -122,6 +122,8 @@ export interface OutlineItem {
   folded: boolean;
   /** 辖下有没有内容：没有就不给箭头 */
   hasKids: boolean;
+  /** 祖先标题处于折叠态：大纲里这一条要整条藏起来（树形收起） */
+  hidden?: boolean;
   /** 仅源码模式的文本大纲带：0 起的行号 */
   line?: number;
 }
@@ -140,20 +142,31 @@ export function setFoldReporter(fn: ((snap: OutlineSnapshot) => void) | null): v
 }
 
 /** 由当前文档状态算一份大纲快照（纯函数，可重复调） */
-function snapshot(state: EditorState): OutlineSnapshot {
+export function snapshot(state: EditorState): OutlineSnapshot {
   const st = headingFoldKey.getState(state);
   const heads = scanHeads(state.doc);
   const seq = new Map<string, number>();
+  // 树形收起：某个标题折着，它后面所有比它深的条目都算「藏起来」，
+  // 直到出现同级或更浅的条目为止（大纲列表与正文折叠表现一致）
+  let hiddenAbove: number | null = null;
   const items = heads.map((h) => {
     const base = `${h.level}|${h.text}`;
     const n = (seq.get(base) ?? 0) + 1;
     seq.set(base, n);
+    let hidden = false;
+    if (hiddenAbove != null) {
+      if (h.level > hiddenAbove) hidden = true;
+      else hiddenAbove = null;
+    }
+    const folded = st?.folded.has(h.pos) ?? false;
+    if (folded && !hidden && h.to > h.from) hiddenAbove = h.level;
     return {
       key: `${base}|${n}`,
       level: h.level,
       text: h.text,
-      folded: st?.folded.has(h.pos) ?? false,
+      folded,
       hasKids: h.to > h.from,
+      hidden,
     };
   });
 
@@ -329,7 +342,11 @@ function build(
   return decos.length ? DecorationSet.create(state.doc, decos) : DecorationSet.empty;
 }
 
-export const headingFold = $prose(() => {
+/**
+ * 插件本体。单独导出工厂：Node 侧能脱离 Milkdown 容器做状态级集成测试
+ * （apply / snapshot / toggle 逻辑），编辑器里仍走 $prose 挂载。
+ */
+export function makeHeadingFoldPlugin(): Plugin<FoldState> {
   // 插件实例自己的 view 引用；widget 的点击靠它 dispatch，不用全局变量
   let view: EditorView | null = null;
 
@@ -376,6 +393,9 @@ export const headingFold = $prose(() => {
       }, 0);
 
       return {
+        // ⚠️ PM 的插件视图 update 签名是 (view, prevState)：nv 是 EditorView，
+        // prev 已经是旧 EditorState（不是旧 view，没有 .state）——写成 prev.state
+        // 会在第一次 dispatch 时抛 TypeError，把推流和持久化一起炸掉
         update: (nv, prev) => {
           view = nv;
           autoUnfold(nv);
@@ -384,11 +404,11 @@ export const headingFold = $prose(() => {
             nv.state.doc !== prev.doc ||
             nv.state.selection !== prev.selection ||
             headingFoldKey.getState(nv.state)?.folded !==
-              headingFoldKey.getState(prev.state)?.folded;
+              headingFoldKey.getState(prev)?.folded;
           if (changed) reporter?.(snapshot(nv.state));
           // 集合每次变更都是新对象，引用不等即「折叠状态变了」
           const now = headingFoldKey.getState(nv.state)?.folded;
-          const was = headingFoldKey.getState(prev.state)?.folded;
+          const was = headingFoldKey.getState(prev)?.folded;
           if (now !== was) foldIO?.save(readFoldedKeys(nv.state));
         },
         destroy: () => {
@@ -397,4 +417,6 @@ export const headingFold = $prose(() => {
       };
     },
   });
-});
+}
+
+export const headingFold = $prose(() => makeHeadingFoldPlugin());

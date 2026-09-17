@@ -626,6 +626,63 @@ body {
   background: var(--sel-bg);
 }
 
+/* ============ HTML 原子节点（Shadow DOM 渲染 / 双击看源码） ============ */
+/* 行内模式：inline-block 保证 ProseMirror 的光标定位与选区盒子量得准 */
+.lm-html-host:not(.lm-html-block) {
+  display: inline-block;
+  vertical-align: baseline;
+  max-width: 100%;
+}
+
+/* 块级模式：包一圈边框表明「这是一块外来 HTML」，角上钉个小标签 */
+.lm-html-host.lm-html-block {
+  display: block;
+  position: relative;
+  margin: 0.55em 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-item);
+  background: var(--bg-canvas);
+}
+.lm-html-host.lm-html-block::after {
+  content: "HTML";
+  position: absolute;
+  top: 3px;
+  right: 6px;
+  font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+.lm-html-host.lm-html-selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-radius: var(--radius-item);
+}
+
+/* 渲染不了（孤立标签）或双击后：显示 HTML 源码小块 */
+.lm-html-host.lm-html-raw {
+  border: 1px dashed var(--border-soft);
+  border-radius: var(--radius-item);
+  background: var(--bg-field);
+  color: var(--text-2);
+  padding: 0.1em 0.45em;
+}
+.lm-html-host.lm-html-raw.lm-html-multiline {
+  display: block;
+  margin: 0.55em 0;
+  padding: 8px 12px;
+}
+.lm-html-host.lm-html-raw code {
+  all: unset;
+  font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 0.8em;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 /* ============ 所见即所得里就地显示的 Markdown 标记（只装饰，不属于文档） ============ */
 .lm-src-tok {
   font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;

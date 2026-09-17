@@ -2,7 +2,7 @@
   "applicationId": "js.lwmark.app",
   "applicationName": "LWmark",
   "description": "轻量简约的本地 Markdown 编辑器",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "defaultMode": "window",
   "port": 0,
   "documentRoot": "/dist/",

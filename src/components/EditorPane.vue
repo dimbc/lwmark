@@ -51,6 +51,7 @@ import {
 } from "../headingFold";
 import { kvGetJSON, kvSetJSON } from "../store";
 import { codeHighlight } from "../codeHighlight";
+import { htmlNodeView, lmHtmlPair } from "../htmlNode";
 import { loadPicgo } from "../picgo";
 import TableHandles from "./TableHandles.vue";
 import ImageBar from "./ImageBar.vue";
@@ -115,6 +116,9 @@ const { get } = useEditor((root) =>
     .use(srcMarks)
     // 代码块语法高亮（纯 Decoration，不改文档）
     .use(codeHighlight)
+    // HTML 支持：成对行内标签合并 + Shadow DOM 渲染（须在 commonmark 之后注册）
+    .use(lmHtmlPair)
+    .use(htmlNodeView)
 );
 
 /** 等编辑器实例就绪（create 完成前 get() 为 undefined） */
